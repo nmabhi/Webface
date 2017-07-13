@@ -52,6 +52,10 @@ import matplotlib.cm as cm
 
 import openface
 
+import pickle, pprint
+import json
+from numpy import genfromtxt
+
 modelDir = os.path.join(fileDir, '..', '..', 'models')
 dlibModelDir = os.path.join(modelDir, 'dlib')
 openfaceModelDir = os.path.join(modelDir, 'openface')
@@ -77,7 +81,59 @@ args = parser.parse_args()
 align = openface.AlignDlib(args.dlibFacePredictor)
 net = openface.TorchNeuralNet(args.networkModel, imgDim=args.imgDim,
                               cuda=args.cuda)
+def loadImages():
+    try:
+        with open('images.pkl', 'rb') as f:
+            # if sys.version_info[0] < 3:
+            images = pickle.load(f)
+        return images
+    except Exception as e:
+        return {}
 
+
+#my_data = genfromtxt('people.csv', delimiter=',')
+def loadModel():
+    # model = open('model.pkl', 'r')
+    # svm_persisted = pickle.load('model.pkl')
+    # output.close()
+    # return svm_persisted
+    # return True
+    try:
+        with open('model.pkl', 'rb') as f:
+            # if sys.version_info[0] < 3:
+            mod = pickle.load(f)
+            return mod
+    except Exception as e:
+        return None
+
+def loadPeople():
+    try:
+        with open('people.pkl', 'rb') as f:
+            mod = pickle.load(f)
+            return mod
+    except Exception as e:
+        return []
+
+
+# def calculateNumberOfImagesPerPerson(data_images):
+#     images_count = {}
+#     # print data_images
+#     for image in data_images:
+#         # print image, data_images[image]
+#         # print data_images[image].identity
+#         if(data_images[image].identity in images_count):
+#             images_count[data_images[image].identity] += 1
+#         else:
+#             images_count[data_images[image].identity] = 1
+
+#     # print images_count
+
+#     sorted_images_count = {}
+#     for key in sorted(images_count.iterkeys(), reverse=True):
+#         sorted_images_count[key] = images_count[key]
+
+#     # print sorted_images_count
+#     return sorted_images_count
 
 class Face:
 
@@ -95,10 +151,15 @@ class Face:
 class OpenFaceServerProtocol(WebSocketServerProtocol):
     def __init__(self):
         super(OpenFaceServerProtocol, self).__init__()
-        self.images = {}
+        self.images = loadImages()
         self.training = True
-        self.people = []
-        self.svm = None
+        self.people = loadPeople()
+        self.svm = loadModel()
+
+        print self.images,self.people
+        # self.images_count = calculateNumberOfImagesPerPerson(self.images)
+        # print self.people
+        # print self.images
         if args.unknown:
             self.unknownImgs = np.load("./examples/web/unknown.npy")
 
@@ -108,6 +169,14 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 
     def onOpen(self):
         print("WebSocket connection open.")
+        # calculateNumberOfImagesPerPerson(self.images)
+        # print images_count
+        # msg = {
+        #     "type": "INITIALIZE",
+        #     "people": self.people,
+        #     "images": calculateNumberOfImagesPerPerson(self.images)
+        # }
+        # self.sendMessage(json.dumps(msg))
 
     def onMessage(self, payload, isBinary):
         raw = payload.decode('utf8')
@@ -116,17 +185,33 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             msg['type'], len(raw)))
         if msg['type'] == "ALL_STATE":
             self.loadState(msg['images'], msg['training'], msg['people'])
+            print msg['images']
         elif msg['type'] == "NULL":
             self.sendMessage('{"type": "NULL"}')
         elif msg['type'] == "FRAME":
+            print "Frame message Identity", msg['identity']
+            #print "Frame message Url",msg['dataURL']
+            f = open( 'url.py', 'w' )
+            f.write( 'url = ' + repr(dict) + '\n' )
+            f.close()
             self.processFrame(msg['dataURL'], msg['identity'])
+           # print msg['identity']
+
             self.sendMessage('{"type": "PROCESSED"}')
         elif msg['type'] == "TRAINING":
             self.training = msg['val']
             if not self.training:
                 self.trainSVM()
         elif msg['type'] == "ADD_PERSON":
-            self.people.append(msg['val'].encode('ascii', 'ignore'))
+            if msg['val'].encode('ascii','ignore') not in self.people:
+
+
+               self.people.append(msg['val'].encode('ascii', 'ignore'))
+               self.people=self.people
+            #np.savetxt("people.csv", self.people, delimiter=",")
+               with open('people.pkl', 'w') as f:
+                    pickle.dump(self.people, f)
+
             print(self.people)
         elif msg['type'] == "UPDATE_IDENTITY":
             h = msg['hash'].encode('ascii', 'ignore')
@@ -154,6 +239,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 
     def loadState(self, jsImages, training, jsPeople):
         self.training = training
+        print jsImages
 
         for jsImage in jsImages:
             h = jsImage['hash'].encode('ascii', 'ignore')
@@ -229,13 +315,21 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
     def trainSVM(self):
         print("+ Training SVM on {} labeled images.".format(len(self.images)))
         d = self.getData()
+        print "Step 1"
         if d is None:
             self.svm = None
+            print "d none"
             return
         else:
+            print "d not none"
             (X, y) = d
+            print "identity from getData()",y
             numIdentities = len(set(y + [-1]))
+            print numIdentities,set(y+[-1])
             if numIdentities <= 1:
+                print "numIdentities <=1"
+
+
                 return
 
             param_grid = [
@@ -246,6 +340,34 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                  'kernel': ['rbf']}
             ]
             self.svm = GridSearchCV(SVC(C=1), param_grid, cv=5).fit(X, y)
+            print "Persisting Model", self.svm
+            self.persistModel(self.svm)
+            print "Loading Model"
+            #s = self.loadModel()
+            #pprint.pprint(s)
+            #self.svm=s 
+
+            # svm_persisted = pickle.dumps(self.svm)
+            # self.svm = pickle.loads(svm_persisted)            
+
+    def loadModel(self):
+        # model = open('model.pkl', 'r')
+        # svm_persisted = pickle.load('model.pkl')
+        # output.close()
+        # return svm_persisted
+        # return True
+        with open('model.pkl', 'rb') as f:
+            # if sys.version_info[0] < 3:
+            mod = pickle.load(f)
+            return mod
+
+    def persistModel(self, mod):
+        # output = open('model.pkl', 'w')
+        with open('model.pkl', 'wb') as f:
+            pickle.dump(mod, f)
+        # svm_persisted = pickle.dump(mod, 'model.pkl', protocol=2)
+        # output.close()
+        return True
 
     def processFrame(self, dataURL, identity):
         head = "data:image/jpeg;base64,"
@@ -270,9 +392,14 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         #     return
 
         identities = []
-        # bbs = align.getAllFaceBoundingBoxes(rgbFrame)
-        bb = align.getLargestFaceBoundingBox(rgbFrame)
-        bbs = [bb] if bb is not None else []
+        if not self.training:
+
+            bbs = align.getAllFaceBoundingBoxes(rgbFrame)
+            
+        else:
+ 
+             bb = align.getLargestFaceBoundingBox(rgbFrame)
+             bbs = [bb] if bb is not None else []
         for bb in bbs:
             # print(len(bbs))
             landmarks = align.findLandmarks(rgbFrame, bb)
@@ -301,19 +428,28 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                         "identity": identity,
                         "representation": rep.tolist()
                     }
+                    print "training",identity
                     self.sendMessage(json.dumps(msg))
+                    #print "training",self.images
+                   # with open('images.json', 'w') as fp:
+                    #     json.dump(self.images, fp)
+                    with open('images.pkl', 'w') as f:
+                        pickle.dump(self.images, f)
                 else:
                     if len(self.people) == 0:
                         identity = -1
                     elif len(self.people) == 1:
                         identity = 0
                     elif self.svm:
+                        print self.svm.predict
                         identity = self.svm.predict(rep)[0]
+                        print "predicted",identity
                     else:
                         print("hhh")
                         identity = -1
                     if identity not in identities:
                         identities.append(identity)
+                        print identities
 
             if not self.training:
                 bl = (bb.left(), bb.bottom())
@@ -330,6 +466,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                         name = "Unknown"
                 else:
                     name = self.people[identity]
+                    print name 
                 cv2.putText(annotatedFrame, name, (bb.left(), bb.top() - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75,
                             color=(152, 255, 204), thickness=2)
@@ -340,6 +477,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 "identities": identities
             }
             self.sendMessage(json.dumps(msg))
+            print identities
 
             plt.figure()
             plt.imshow(annotatedFrame)
@@ -357,6 +495,9 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             }
             plt.close()
             self.sendMessage(json.dumps(msg))
+
+        
+
 
 
 def main(reactor):

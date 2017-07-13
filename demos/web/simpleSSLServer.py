@@ -9,10 +9,12 @@ import sys
 
 
 def main(port):
+	# print port, "Checkpoint 1"
     httpd = BaseHTTPServer.HTTPServer(('0.0.0.0', port), SimpleHTTPServer.SimpleHTTPRequestHandler)
     httpd.socket = ssl.wrap_socket(httpd.socket, certfile='tls/server.pem', server_side=True)
     print('now serving tls http on port:', port)
     httpd.serve_forever()
 
 if __name__ == '__main__':
+	# print "CHECK POINT 2"
     main(int(sys.argv[1]))

@@ -100,6 +100,26 @@ function getPeopleInfoHtml() {
     return h;
 }
 
+// function getOldPeopleInfoHtml() {
+//     var info = {'-1': 0};
+//     var len = people.length;
+//     for (var i = 0; i < len; i++) {
+//         info[i] = 0;
+//     }
+
+//     for(var k in images_count) {
+//         info[k] = images_count[k];        
+//     }
+
+//     var h = "<li><b>Unknown:</b> "+info['-1']+"</li>";
+//     var len = people.length;
+//     for (var i = 0; i < len; i++) {
+//         h += "<li><b>"+people[i]+":</b> "+info[i]+"</li>";
+//     }
+//     return h;
+// }
+
+
 function redrawPeople() {
     var context = {people: people, images: images};
     $("#peopleTable").html(peopleTableTmpl(context));
@@ -109,6 +129,19 @@ function redrawPeople() {
 
     $("#peopleInfo").html(getPeopleInfoHtml());
 }
+
+// function redrawPeopleFirstTime() {
+//     var context = {people: people, images: null};
+//     // $("#peopleTable").html(peopleTableTmpl(context));
+
+//     // var context = {people: people};
+//     // $("#defaultPersonDropdown").html(defaultPersonTmpl(context));
+
+//     // $("#peopleInfo").html(getPeopleInfoHtml());
+
+//     // We want to show the name of the people and the number of images we  trained for them previously.
+//     $("#oldPeopleInfo").html(getOldPeopleInfoHtml());
+// }
 
 function getDataURLFromRGB(rgb) {
     var rgbLen = rgb.length;
@@ -168,8 +201,9 @@ function createSocket(address, name) {
         sentTimes.push(new Date());
     }
     socket.onmessage = function(e) {
-        console.log(e);
-        j = JSON.parse(e.data)
+        // console.log(e);
+        j = JSON.parse(e.data);
+        console.log(j);
         if (j.type == "NULL") {
             receivedTimes.push(new Date());
             numNulls++;
@@ -217,6 +251,11 @@ function createSocket(address, name) {
             BootstrapDialog.show({
                 message: "<img src='" + j['content'] + "' width='100%'></img>"
             });
+        } else if(j.type == "INITIALIZE") {
+            // Set the initial values of people.
+            // people = j.people;
+            // images_count= j.images;
+            // redrawPeopleFirstTime();
         } else {
             console.log("Unrecognized message type: " + j.type);
         }
