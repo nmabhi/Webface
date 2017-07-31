@@ -55,6 +55,7 @@ import openface
 import pickle, pprint
 import json
 from numpy import genfromtxt
+import pandas as pd
 
 modelDir = os.path.join(fileDir, '..', '..', 'models')
 dlibModelDir = os.path.join(modelDir, 'dlib')
@@ -90,6 +91,35 @@ def loadImages():
     except Exception as e:
         return {}
 
+def imageCentroids(images):
+        images_count = {}
+#     # print data_images
+        for image in images:
+
+     # print image, data_images[image]
+#         # print data_images[image].identity
+            if(images[image].identity in images_count):
+                images_rep.append(images[image].rep)
+                images_count[images[image].identity] =images_rep
+            else:
+                images_rep=[]
+                images_rep.append(images[image].rep)
+                images_count[images[image].identity] = images_rep
+        #print "centroid check",images_count
+        print "centroid check",images_count[0][0:4],images_count[1][0:4]
+        image_centroids={}
+        for key in images_count.keys():
+            image_centroids[key]=np.mean(images_count[key],axis=0)
+        return image_centroids
+
+        
+     
+
+
+
+                
+
+
 
 #my_data = genfromtxt('people.csv', delimiter=',')
 def loadModel():
@@ -115,18 +145,34 @@ def loadPeople():
         return []
 
 
-# def calculateNumberOfImagesPerPerson(data_images):
-#     images_count = {}
-#     # print data_images
-#     for image in data_images:
-#         # print image, data_images[image]
-#         # print data_images[image].identity
-#         if(data_images[image].identity in images_count):
-#             images_count[data_images[image].identity] += 1
-#         else:
-#             images_count[data_images[image].identity] = 1
+#def calculateImagesPerPerson():
+#    try:
+#        with open('images.pkl', 'rb') as f:
+        # if sys.version_info[0] < 3:
+#            images = pickle.load(f)
+    
 
-#     # print images_count
+
+#        images_count = {}
+#     # print data_images
+#        for image in images:
+
+     # print image, data_images[image]
+#         # print data_images[image].identity
+#            if(images[image].identity in images_count):
+#                images_rep.append(images[image].representation)
+#                images_count[images[image].identity] += 1
+#           else:
+ #               images_rep=[]
+  #              images_rep.append(images[image].representation)
+#                images_count[images[image].identity] = images_rep
+#        print "centroid check",images_count
+
+#        return images_count
+#    except Exception as e:
+#        return 
+
+
 
 #     sorted_images_count = {}
 #     for key in sorted(images_count.iterkeys(), reverse=True):
@@ -155,11 +201,16 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         self.training = True
         self.people = loadPeople()
         self.svm = loadModel()
+        self.centroids=imageCentroids(self.images)
+        print 'centroids',self.centroids[0]
+        print "centroids_2",self.centroids[1]
+        
 
-        print self.images,self.people
+        #print self.images,self.people
         # self.images_count = calculateNumberOfImagesPerPerson(self.images)
         # print self.people
-        # print self.images
+        #print self.images
+
         if args.unknown:
             self.unknownImgs = np.load("./examples/web/unknown.npy")
 
@@ -292,11 +343,12 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         yVals = list(np.unique(y))
         colors = cm.rainbow(np.linspace(0, 1, len(yVals)))
 
-        # print(yVals)
+        print(yVals)
 
         plt.figure()
         for c, i in zip(colors, yVals):
-            name = "Unknown" if i == -1 else people[i]
+	    print i,self.people
+            name = "Unknown" if i == -1 else self.people[i]
             plt.scatter(X_r[y == i, 0], X_r[y == i, 1], c=c, label=name)
             plt.legend()
 
@@ -311,6 +363,11 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             "content": content
         }
         self.sendMessage(json.dumps(msg))
+
+
+
+
+     
 
     def trainSVM(self):
         print("+ Training SVM on {} labeled images.".format(len(self.images)))
@@ -339,7 +396,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                  'gamma': [0.001, 0.0001],
                  'kernel': ['rbf']}
             ]
-            self.svm = GridSearchCV(SVC(C=1), param_grid, cv=5).fit(X, y)
+            self.svm = GridSearchCV(SVC(C=1,probability=True), param_grid, cv=5).fit(X, y)
             print "Persisting Model", self.svm
             self.persistModel(self.svm)
             print "Loading Model"
@@ -348,7 +405,10 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             #self.svm=s 
 
             # svm_persisted = pickle.dumps(self.svm)
-            # self.svm = pickle.loads(svm_persisted)            
+            # self.svm = pickle.loads(svm_persisted) 
+
+
+
 
     def loadModel(self):
         # model = open('model.pkl', 'r')
@@ -440,10 +500,20 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                         identity = -1
                     elif len(self.people) == 1:
                         identity = 0
+                    
                     elif self.svm:
-                        print self.svm.predict
+                        print self.svm.predict_proba(rep)
+                        distances=[]
+                        for key in self.centroids.keys():
+                            id_rep=self.centroids[key]
+
+                            dist=np.linalg.norm(id_rep-rep)
+                            
+                            distances.append(dist)
+
                         identity = self.svm.predict(rep)[0]
-                        print "predicted",identity
+
+                        print "predicted",identity,distances
                     else:
                         print("hhh")
                         identity = -1
