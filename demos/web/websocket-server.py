@@ -201,9 +201,9 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         self.training = True
         self.people = loadPeople()
         self.svm = loadModel()
-        self.centroids=imageCentroids(self.images)
-        print 'centroids',self.centroids[0]
-        print "centroids_2",self.centroids[1]
+        #self.centroids=imageCentroids(self.images)
+        #print 'centroids',self.centroids[0]
+        #print "centroids_2",self.centroids[1]
         
 
         #print self.images,self.people
@@ -262,6 +262,9 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             #np.savetxt("people.csv", self.people, delimiter=",")
                with open('people.pkl', 'w') as f:
                     pickle.dump(self.people, f)
+            if not os.path.isdir("/home/wlpt836/webface/Train_Image/"+msg['val'].encode('ascii','ignore')):
+                    os.mkdir("/home/wlpt836/webface/Train_Image/"+msg['val'].encode('ascii','ignore'))
+            os.chdir("/home/wlpt836/webface/Train_Image/"+msg['val'].encode('ascii','ignore'))
 
             print(self.people)
         elif msg['type'] == "UPDATE_IDENTITY":
@@ -423,7 +426,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 
     def persistModel(self, mod):
         # output = open('model.pkl', 'w')
-        with open('model.pkl', 'wb') as f:
+        with open('/webface/model.pkl', 'wb') as f:
             pickle.dump(mod, f)
         # svm_persisted = pickle.dump(mod, 'model.pkl', protocol=2)
         # output.close()
@@ -476,6 +479,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 rep = net.forward(alignedFace)
                 # print(rep)
                 if self.training:
+                    urllib.urlretrieve(dataURL,phash+".jpg")
+                    
                     self.images[phash] = Face(rep, identity)
                     # TODO: Transferring as a string is suboptimal.
                     # content = [str(x) for x in cv2.resize(alignedFace, (0,0),
@@ -493,8 +498,14 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                     #print "training",self.images
                    # with open('images.json', 'w') as fp:
                     #     json.dump(self.images, fp)
-                    with open('images.pkl', 'w') as f:
+                    with open('webface/images.pkl', 'w') as f:
                         pickle.dump(self.images, f)
+                    
+                    
+                    
+
+
+
                 else:
                     if len(self.people) == 0:
                         identity = -1

@@ -34,10 +34,9 @@ import requests
 from flask import Flask,request,jsonify
 app = Flask(__name__)
 
-modelDir = os.path.join(fileDir, '..', '..', 'models')
+modelDir = os.path.join(fileDir,  'models')
 dlibModelDir = os.path.join(modelDir, 'dlib')
 openfaceModelDir = os.path.join(modelDir, 'openface')
-homeDir=os.path.join(fileDir,'..','..')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dlibFacePredictor', type=str, help="Path to dlib's face predictor.",
@@ -63,14 +62,13 @@ def loadModel():
     # output.close()
     # return svm_persisted
     # return True
-    with open(homeDir+'/model.pkl', 'rb') as f:
+    with open(fileDir+'/model.pkl', 'rb') as f:
         # if sys.version_info[0] < 3:
         mod = pickle.load(f)
         return mod
 
 def loadOfflineModel():
-
-     with open(homeDir+'/Feature_dir/classifier.pkl', 'rb') as f:
+     with open(fileDir+'/Feature_dir/classifier.pkl', 'rb') as f:
         if sys.version_info[0] < 3:
                 (le, clf) = pickle.load(f)
                 return (le,clf)
@@ -80,7 +78,7 @@ def loadOfflineModel():
 
 
 def loadPeople():
-     with open(homeDir+'/people.pkl', 'rb') as f:
+     with open(fileDir+'/people.pkl', 'rb') as f:
         # if sys.version_info[0] < 3:
         mod = pickle.load(f)
         return mod
