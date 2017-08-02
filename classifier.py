@@ -165,6 +165,8 @@ def train(args):
                         ('clf', clf_final)])
 
     clf.fit(embeddings, labelsNum)
+    #embeddings['label']=labels
+    #fName="{}/embeddings.csv"
 
     fName = "{}/classifier.pkl".format(args.workDir)
     print("Saving classifier to '{}'".format(fName))
@@ -199,8 +201,8 @@ def infer(args, multiple=False):
             if args.verbose:
                 print("Prediction took {} seconds.".format(time.time() - start))
             if multiple:
-                print("Predict {} @ x={} with {:.2f} confidence and {}.".format(person.decode('utf-8'), bbx,
-                                                                         confidence,dist))
+                print("Predict {} @ x={} with {:.2f} confidence .".format(person.decode('utf-8'), bbx,
+                                                                         confidence))
             else:
                 print("Predict {} with {:.2f} confidence and distance.".format(person.decode('utf-8'), confidence))
             if isinstance(clf, GMM):
