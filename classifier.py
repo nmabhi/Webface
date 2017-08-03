@@ -165,7 +165,11 @@ def train(args):
                         ('clf', clf_final)])
 
     clf.fit(embeddings, labelsNum)
-    #embeddings['label']=labels
+    embeddings=pd.DataFrame(embeddings)
+    embeddings.index=labels
+    fname="{}/embeddings.csv".format(args.workDir)
+    embeddings.to_csv(fname)
+
     #fName="{}/embeddings.csv"
 
     fName = "{}/classifier.pkl".format(args.workDir)
