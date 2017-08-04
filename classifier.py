@@ -166,9 +166,16 @@ def train(args):
 
     clf.fit(embeddings, labelsNum)
     embeddings=pd.DataFrame(embeddings)
-    embeddings.index=labels
+    centroids={}
+    embeddings['labels']=labels
+    for classes in le.classes_:
+        centroids[classes]=embeddings[embeddings['labels']==classes].mean()
+
     fname="{}/embeddings.csv".format(args.workDir)
     embeddings.to_csv(fname)
+    fname="{}/centroids.pkl".format(args.workDir)
+    with open(fname,'w') as f:
+        pickle.dump(centroids,f)
 
     #fName="{}/embeddings.csv"
 
@@ -184,6 +191,14 @@ def infer(args, multiple=False):
                 (le, clf) = pickle.load(f)
         else:
                 (le, clf) = pickle.load(f, encoding='latin1')
+    
+    with open(args.centroids,'rb') as f:
+        if sys.version_info[0] < 3:
+            centroids=pickle.load(f)
+        else:
+            centroids=pickle.load(f, encoding='latin1')
+    #print centroids
+
 
     for img in args.imgs:
         print("\n=== {} ===".format(img))
@@ -202,13 +217,22 @@ def infer(args, multiple=False):
             #w_norm = np.linalg.norm(clf.coef_)
             #dist = y / w_norm
             #dist= dist = np.linalg.norm(rep - clf.means_[maxI])
+            dist={}
+            #print centroids['Abhishek']
+            for key in centroids.keys():
+                dist[key]=(np.linalg.norm(rep-list(centroids[key])))
+            if dist[person]>0.6:
+                person="Unknown"
             if args.verbose:
                 print("Prediction took {} seconds.".format(time.time() - start))
+                print("Distances {} from classes").format(dist)
             if multiple:
                 print("Predict {} @ x={} with {:.2f} confidence .".format(person.decode('utf-8'), bbx,
                                                                          confidence))
+                print("Distances {} from classes").format(dist)
             else:
                 print("Predict {} with {:.2f} confidence and distance.".format(person.decode('utf-8'), confidence))
+                print("Distances {} from classes").format(dist)
             if isinstance(clf, GMM):
                 dist = np.linalg.norm(rep - clf.means_[maxI])
                 print("  + Distance from the mean: {}".format(dist))
@@ -269,6 +293,8 @@ if __name__ == '__main__':
                              help="Input image.")
     inferParser.add_argument('--multi', help="Infer multiple faces in image",
                              action="store_true")
+    inferParser.add_argument('centroids',type=str,help="Pickle file representing centroids")
+
 
     args = parser.parse_args()
     if args.verbose:
