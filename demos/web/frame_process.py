@@ -222,6 +222,7 @@ def processFrame(dataURL):
         faces['confidence']=confidence
         faces['distance']= distance
         identities.append(faces)
+    print identities
     return identities
 
 
