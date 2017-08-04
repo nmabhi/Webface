@@ -176,6 +176,9 @@ def train(args):
     fname="{}/centroids.pkl".format(args.workDir)
     with open(fname,'w') as f:
         pickle.dump(centroids,f)
+    centroids_csv=pd.DataFrame(centroids)
+    name="{}/centroids.csv".format(args.workDir)
+    centroids_csv.to_csv(args.workDir+'centroids_csv.csv')
 
     #fName="{}/embeddings.csv"
 
