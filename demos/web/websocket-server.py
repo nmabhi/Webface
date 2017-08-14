@@ -385,14 +385,16 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 
     def retrain(self):
         os.chdir(alignDir)
-        os.remove(alignDir+'/Aligned_data'+'/cache.t7')
+        
         
         os.system('python align-dlib.py'+' '+trainDir+' '+'align outerEyesAndNose Aligned_data/ --size 96')
+        os.remove(alignDir+'/Aligned_data'+'/cache.t7')
         os.system('./batch-represent/main.lua -outDir Feature_gui/ -data Aligned_data/')
         os.system('python classifier.py train Feature_gui/ --classifier RadialSvm')
-        os.remove(alignDir+'/Aligned_data_unknown'+'/cache.t7')
+        
         os.system('cp -r  Unknown/ Train_Image/')
         os.system('python align-dlib.py Train_Image/ align outerEyesAndNose Aligned_data_unknown/ --size 96')
+        os.remove(alignDir+'/Aligned_data_unknown'+'/cache.t7')
         os.system('./batch-represent/main.lua -outDir Feature_unknown/ -data Aligned_data_unknown/')
         os.system('python classifier.py train Feature_unknown/ --classifier RadialSvm')
         os.chdir(alignDir+'/Train_Image/')
@@ -595,7 +597,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                     print self.centroids_unknown.keys()
                     prediction_unknown=self.clf_unknown.predict_proba(rep).ravel()
                     maxI = np.argmax(prediction_unknown)
-                    person_unknown = self.le_dist.inverse_transform(maxI)
+                    person_unknown = self.le_unknown.inverse_transform(maxI)
                     confidence = prediction_unknown[maxI]
                     distance=dist_unknown[person_unknown]
                     #person_dist=min(dist, key=dist.get)
