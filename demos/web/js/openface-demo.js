@@ -317,6 +317,7 @@ function trainingChkCallback() {
 }
 
 function viewTSNECallback(el) {
+    console.log("EnteredTsne");
     if (socket != null) {
         var msg = {
             'type': 'REQ_TSNE',
@@ -325,6 +326,43 @@ function viewTSNECallback(el) {
         socket.send(JSON.stringify(msg));
     }
 }
+
+function distanceCallback(){
+    console.log("distance cllback");
+    if (socket !=null) {
+        console.log("not null");
+        var msg = {
+            'type':'DISTANCE',
+            //'val':retrain 
+        };
+        socket.send(JSON.stringify(msg));
+    }
+
+}
+
+function unknownCallback(){
+    console.log("unknown callback");
+    if (socket !=null) {
+        console.log("not null");
+        var msg = {
+            'type':'UNKNOWN',
+            //'val':retrain 
+        };
+        socket.send(JSON.stringify(msg));
+    }
+}
+
+
+function retrainCallback(){
+    if (socket !=null) {
+        var msg = {
+            'type':'RE-TRAIN',
+            //'val':retrain 
+        };
+        socket.send(JSON.stringify(msg));
+    }
+}
+
 
 function findImageByHash(hash) {
     var imgIdx = 0;

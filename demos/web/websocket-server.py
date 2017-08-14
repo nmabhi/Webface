@@ -44,6 +44,7 @@ from sklearn.decomposition import PCA
 from sklearn.grid_search import GridSearchCV
 from sklearn.manifold import TSNE
 from sklearn.svm import SVC
+from sklearn.cluster import KMeans
 
 import matplotlib as mpl
 mpl.use('Agg')
@@ -51,15 +52,23 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 import openface
-
 import pickle, pprint
 import json
 from numpy import genfromtxt
+import requests
 import pandas as pd
+
 
 modelDir = os.path.join(fileDir, '..', '..', 'models')
 dlibModelDir = os.path.join(modelDir, 'dlib')
 openfaceModelDir = os.path.join(modelDir, 'openface')
+trainDir=os.path.join(fileDir,'..','..','Train_Image')
+classifierDir=os.path.join(fileDir,'..','..')
+imagesDir=os.path.join(fileDir,'..','..')
+peopleDir=os.path.join(fileDir,'..','..')
+featureDir=os.path.join(fileDir,'..','..','Feature_gui')
+Feature_unknown=os.path.join(fileDir,'..','..','Feature_unknown')
+alignDir=os.path.join(fileDir,'..','..')
 # For TLS connections
 tls_crt = os.path.join(fileDir, 'tls', 'server.crt')
 tls_key = os.path.join(fileDir, 'tls', 'server.key')
@@ -82,6 +91,70 @@ args = parser.parse_args()
 align = openface.AlignDlib(args.dlibFacePredictor)
 net = openface.TorchNeuralNet(args.networkModel, imgDim=args.imgDim,
                               cuda=args.cuda)
+
+
+
+def loadDist():
+    try:
+        with open(featureDir+'/classifier.pkl', 'rb') as f:
+            # if sys.version_info[0] < 3:
+            if sys.version_info[0] < 3:
+                (le, clf) = pickle.load(f)
+                return (le,clf)
+            else:
+                (le, clf) = pickle.load(f, encoding='latin1')
+                return (le,clf)
+    except Exception as e:
+        return None
+
+def loadUnknown():
+    try:
+        with open(Feature_unknown+'/classifier.pkl', 'rb') as f:
+            # if sys.version_info[0] < 3:
+            if sys.version_info[0] < 3:
+                (le, clf) = pickle.load(f)
+                return (le,clf)
+            else:
+                (le, clf) = pickle.load(f, encoding='latin1')
+                return (le,clf)
+    except Exception as e:
+        return None
+
+
+
+
+def retrain():
+    os.chdir(alignDir)
+    os.remove(alignDir+'/Aligned_data'+'/cache.t7')
+    os.system('python align-dlib.py'+' '+trainDir+' '+'align outerEyesAndNose Aligned_data/ --size 96')
+    os.system('./batch-represent/main.lua -outDir Feature_gui/ -data Aligned_data/')
+    os.system('python classifier.py train Feature_gui/ --classifier RadialSvm')
+    os.remove(alignDir+'/Aligned_data_unknown'+'/cache.t7')
+    os.system('cp -r  Unknown/ Train_Image/')
+    os.system('python align-dlib.py Train_Image/ align outerEyesAndNose Aligned_data_unknown/ --size 96')
+    os.system('./batch-represent/main.lua -outDir Feature_unknown/ -data Aligned_data_unknown/')
+    os.system('python classifier.py train Feature_unknown/ --classifier RadialSvm')
+    os.remove(alignDir+'/Train_Image/'+'Unknown/')
+
+
+    os.chdir(fileDir)
+
+    try:
+        with open(self.featureDir+'/classifier.pkl', 'rb') as f:
+        # if sys.version_info[0] < 3:
+            if sys.version_info[0] < 3:
+                (le, clf) = pickle.load(f)
+                return (le,clf)
+            else:
+                (le, clf) = pickle.load(f, encoding='latin1')
+                return (le,clf)
+    except Exception as e:
+        return None
+
+
+
+
+
 def loadImages():
     try:
         with open('images.pkl', 'rb') as f:
@@ -90,35 +163,6 @@ def loadImages():
         return images
     except Exception as e:
         return {}
-
-def imageCentroids(images):
-        images_count = {}
-#     # print data_images
-        for image in images:
-
-     # print image, data_images[image]
-#         # print data_images[image].identity
-            if(images[image].identity in images_count):
-                images_rep.append(images[image].rep)
-                images_count[images[image].identity] =images_rep
-            else:
-                images_rep=[]
-                images_rep.append(images[image].rep)
-                images_count[images[image].identity] = images_rep
-        #print "centroid check",images_count
-        print "centroid check",images_count[0][0:4],images_count[1][0:4]
-        image_centroids={}
-        for key in images_count.keys():
-            image_centroids[key]=np.mean(images_count[key],axis=0)
-        return image_centroids
-
-        
-     
-
-
-
-                
-
 
 
 #my_data = genfromtxt('people.csv', delimiter=',')
@@ -144,43 +188,6 @@ def loadPeople():
     except Exception as e:
         return []
 
-
-#def calculateImagesPerPerson():
-#    try:
-#        with open('images.pkl', 'rb') as f:
-        # if sys.version_info[0] < 3:
-#            images = pickle.load(f)
-    
-
-
-#        images_count = {}
-#     # print data_images
-#        for image in images:
-
-     # print image, data_images[image]
-#         # print data_images[image].identity
-#            if(images[image].identity in images_count):
-#                images_rep.append(images[image].representation)
-#                images_count[images[image].identity] += 1
-#           else:
- #               images_rep=[]
-  #              images_rep.append(images[image].representation)
-#                images_count[images[image].identity] = images_rep
-#        print "centroid check",images_count
-
-#        return images_count
-#    except Exception as e:
-#        return 
-
-
-
-#     sorted_images_count = {}
-#     for key in sorted(images_count.iterkeys(), reverse=True):
-#         sorted_images_count[key] = images_count[key]
-
-#     # print sorted_images_count
-#     return sorted_images_count
-
 class Face:
 
     def __init__(self, rep, identity):
@@ -197,20 +204,22 @@ class Face:
 class OpenFaceServerProtocol(WebSocketServerProtocol):
     def __init__(self):
         super(OpenFaceServerProtocol, self).__init__()
-        self.images = loadImages()
+        self.images = {}
         self.training = True
-        self.people = loadPeople()
-        self.svm = loadModel()
-        #self.centroids=imageCentroids(self.images)
-        #print 'centroids',self.centroids[0]
-        #print "centroids_2",self.centroids[1]
-        
-
-        #print self.images,self.people
-        # self.images_count = calculateNumberOfImagesPerPerson(self.images)
-        # print self.people
-        #print self.images
-
+        self.people = []
+        self.svm = None
+        (self.le_dist,self.clf_dist)=loadDist()
+        (self.le_unknown,self.clf_unknown)=loadUnknown()
+        self.centroids_dist=pd.read_csv(featureDir+'/centroids_csv.csv')
+        self.centroids_dist.drop(self.centroids_dist.columns[0],axis=1,inplace=True)
+        self.embeddings_dist=pd.read_csv(featureDir+'/embeddings.csv')
+        self.embeddings_unknown=pd.read_csv(Feature_unknown+'/embeddings.csv')
+        self.centroids_unknown=pd.read_csv(Feature_unknown+'/centroids_csv.csv')
+        self.centroids_unknown.drop(self.centroids_unknown.columns[0],axis=1,inplace=True)
+        self.KMeans=None
+        #self.centroids.drop(self.centroids.columns[0],axis=1,inplace=True)
+        #self.retrain=False
+        self.classifier="Distance"
         if args.unknown:
             self.unknownImgs = np.load("./examples/web/unknown.npy")
 
@@ -220,14 +229,6 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 
     def onOpen(self):
         print("WebSocket connection open.")
-        # calculateNumberOfImagesPerPerson(self.images)
-        # print images_count
-        # msg = {
-        #     "type": "INITIALIZE",
-        #     "people": self.people,
-        #     "images": calculateNumberOfImagesPerPerson(self.images)
-        # }
-        # self.sendMessage(json.dumps(msg))
 
     def onMessage(self, payload, isBinary):
         raw = payload.decode('utf8')
@@ -236,18 +237,10 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             msg['type'], len(raw)))
         if msg['type'] == "ALL_STATE":
             self.loadState(msg['images'], msg['training'], msg['people'])
-            print msg['images']
         elif msg['type'] == "NULL":
             self.sendMessage('{"type": "NULL"}')
         elif msg['type'] == "FRAME":
-            print "Frame message Identity", msg['identity']
-            #print "Frame message Url",msg['dataURL']
-            f = open( 'url.py', 'w' )
-            f.write( 'url = ' + repr(dict) + '\n' )
-            f.close()
             self.processFrame(msg['dataURL'], msg['identity'])
-           # print msg['identity']
-
             self.sendMessage('{"type": "PROCESSED"}')
         elif msg['type'] == "TRAINING":
             self.training = msg['val']
@@ -260,13 +253,14 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                self.people.append(msg['val'].encode('ascii', 'ignore'))
                self.people=self.people
             #np.savetxt("people.csv", self.people, delimiter=",")
-               with open('people.pkl', 'w') as f:
+               with open(peopleDir+'/people.pkl', 'w') as f:
                     pickle.dump(self.people, f)
-            if not os.path.isdir("/home/wlpt836/webface/Train_Image/"+msg['val'].encode('ascii','ignore')):
-                    os.mkdir("/home/wlpt836/webface/Train_Image/"+msg['val'].encode('ascii','ignore'))
-            os.chdir("/home/wlpt836/webface/Train_Image/"+msg['val'].encode('ascii','ignore'))
 
             print(self.people)
+            if not os.path.isdir(trainDir+"/"+msg['val'].encode('ascii','ignore')):
+                os.mkdir(trainDir+"/"+msg['val'].encode('ascii','ignore'))
+            os.chdir(trainDir+"/"+msg['val'].encode('ascii','ignore'))
+
         elif msg['type'] == "UPDATE_IDENTITY":
             h = msg['hash'].encode('ascii', 'ignore')
             if h in self.images:
@@ -285,6 +279,24 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 print("Image not found.")
         elif msg['type'] == 'REQ_TSNE':
             self.sendTSNE(msg['people'])
+        elif msg['type']== 'RE-TRAIN':
+            print self.classifier
+            self.retrain()
+        elif msg['type']=='DISTANCE':
+            #(self.le,self.clf)=loadDist()
+            self.classifier="Distance"
+            self.centroids=pd.read_csv(featureDir+'/centroids_csv.csv')
+            self.centroids.drop(self.centroids.columns[0],axis=1,inplace=True)
+
+            print self.classifier
+        elif msg['type']=="UNKNOWN":
+            #(self.le,self.clf)=loadUnknown()
+            self.classifier="Unknown"
+            self.centroids=pd.read_csv(Feature_unknown+'/centroids_csv.csv')
+            self.centroids.drop(self.centroids.columns[0],axis=1,inplace=True)
+            print self.classifier
+
+
         else:
             print("Warning: Unknown message type: {}".format(msg['type']))
 
@@ -293,7 +305,6 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 
     def loadState(self, jsImages, training, jsPeople):
         self.training = training
-        print jsImages
 
         for jsImage in jsImages:
             h = jsImage['hash'].encode('ascii', 'ignore')
@@ -333,11 +344,16 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         return (X, y)
 
     def sendTSNE(self, people):
-        d = self.getData()
+        #if self.classifier=='Distance':
+        #    d=self.embeddings_dist
+        #else:
+        #    d=self.embeddings_unknown
+        d = self.embeddings_dist
         if d is None:
             return
         else:
-            (X, y) = d
+            (X, y) = (d,d['labels'])
+            X.drop('labels',axis=1, inplace=True)
 
         X_pca = PCA(n_components=50).fit_transform(X, X)
         tsne = TSNE(n_components=2, init='random', random_state=0)
@@ -346,12 +362,12 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         yVals = list(np.unique(y))
         colors = cm.rainbow(np.linspace(0, 1, len(yVals)))
 
-        print(yVals)
+        # print(yVals)
 
         plt.figure()
         for c, i in zip(colors, yVals):
-	    print i,self.people
-            name = "Unknown" if i == -1 else self.people[i]
+            #name = "Unknown" if i == -1 else people[i]
+            name=i
             plt.scatter(X_r[y == i, 0], X_r[y == i, 1], c=c, label=name)
             plt.legend()
 
@@ -367,29 +383,77 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         }
         self.sendMessage(json.dumps(msg))
 
+    def retrain(self):
+        os.chdir(alignDir)
+        os.remove(alignDir+'/Aligned_data'+'/cache.t7')
+        
+        os.system('python align-dlib.py'+' '+trainDir+' '+'align outerEyesAndNose Aligned_data/ --size 96')
+        os.system('./batch-represent/main.lua -outDir Feature_gui/ -data Aligned_data/')
+        os.system('python classifier.py train Feature_gui/ --classifier RadialSvm')
+        os.remove(alignDir+'/Aligned_data_unknown'+'/cache.t7')
+        os.system('cp -r  Unknown/ Train_Image/')
+        os.system('python align-dlib.py Train_Image/ align outerEyesAndNose Aligned_data_unknown/ --size 96')
+        os.system('./batch-represent/main.lua -outDir Feature_unknown/ -data Aligned_data_unknown/')
+        os.system('python classifier.py train Feature_unknown/ --classifier RadialSvm')
+        os.chdir(alignDir+'/Train_Image/')
+        os.system('rm -rf Unknown/')
+        
+
+
+        os.chdir(fileDir)
+        print self.classifier
+        #if self.classifier=="Distance":
+
+
+        try:
+            with open(featureDir+'/classifier.pkl', 'rb') as f:
+        # if sys.version_info[0] < 3:
+                if sys.version_info[0] < 3:
+                    (self.le_dist, self.clf_dist) = pickle.load(f)
+                    #return (le,clf)
+                else:
+                    (self.le_dist, clf_dist) = pickle.load(f, encoding='latin1')
+                        #return (le,clf)
+        except Exception as e:
+            return None
+
+        #if self.classifier=="Unknown":
+        try:
+            with open(Feature_unknown+'/classifier.pkl', 'rb') as f:
+        # if sys.version_info[0] < 3:
+                if sys.version_info[0] < 3:
+                    (self.le_unknown, self.clf_unknown) = pickle.load(f)
+                        #return (le,clf)
+                else:
+                    (self.le_unknown, self.clf_unknown) = pickle.load(f, encoding='latin1')
+                        #return (le,clf)
+        except Exception as e:
+            return None
+
+        X=self.embeddings_dist
+        y=self.embeddings_dist['labels']
+        X=X.drop('labels',axis=1, inplace=True)
+        
+
+
+        return
 
 
 
-     
+
+
+
 
     def trainSVM(self):
         print("+ Training SVM on {} labeled images.".format(len(self.images)))
         d = self.getData()
-        print "Step 1"
         if d is None:
             self.svm = None
-            print "d none"
             return
         else:
-            print "d not none"
             (X, y) = d
-            print "identity from getData()",y
             numIdentities = len(set(y + [-1]))
-            print numIdentities,set(y+[-1])
             if numIdentities <= 1:
-                print "numIdentities <=1"
-
-
                 return
 
             param_grid = [
@@ -399,19 +463,10 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                  'gamma': [0.001, 0.0001],
                  'kernel': ['rbf']}
             ]
-            self.svm = GridSearchCV(SVC(C=1,probability=True), param_grid, cv=5).fit(X, y)
+            self.svm = GridSearchCV(SVC(C=1), param_grid, cv=5).fit(X, y)
             print "Persisting Model", self.svm
             self.persistModel(self.svm)
             print "Loading Model"
-            #s = self.loadModel()
-            #pprint.pprint(s)
-            #self.svm=s 
-
-            # svm_persisted = pickle.dumps(self.svm)
-            # self.svm = pickle.loads(svm_persisted) 
-
-
-
 
     def loadModel(self):
         # model = open('model.pkl', 'r')
@@ -419,18 +474,20 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         # output.close()
         # return svm_persisted
         # return True
-        with open('model.pkl', 'rb') as f:
+        with open(classifierDir+'/model.pkl', 'rb') as f:
             # if sys.version_info[0] < 3:
             mod = pickle.load(f)
             return mod
 
     def persistModel(self, mod):
         # output = open('model.pkl', 'w')
-        with open('/webface/model.pkl', 'wb') as f:
+        with open(classifierDir+'/model.pkl', 'wb') as f:
             pickle.dump(mod, f)
         # svm_persisted = pickle.dump(mod, 'model.pkl', protocol=2)
         # output.close()
         return True
+
+
 
     def processFrame(self, dataURL, identity):
         head = "data:image/jpeg;base64,"
@@ -453,6 +510,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         # cv2.imshow('frame', rgbFrame)
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     return
+
 
         identities = []
         if not self.training:
@@ -479,8 +537,6 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 rep = net.forward(alignedFace)
                 # print(rep)
                 if self.training:
-                    urllib.urlretrieve(dataURL,phash+".jpg")
-                    
                     self.images[phash] = Face(rep, identity)
                     # TODO: Transferring as a string is suboptimal.
                     # content = [str(x) for x in cv2.resize(alignedFace, (0,0),
@@ -493,38 +549,73 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                         "identity": identity,
                         "representation": rep.tolist()
                     }
-                    print "training",identity
                     self.sendMessage(json.dumps(msg))
-                    #print "training",self.images
-                   # with open('images.json', 'w') as fp:
-                    #     json.dump(self.images, fp)
-                    with open('webface/images.pkl', 'w') as f:
+                    #os.remove(alignDir+'/Aligned_data'+'/cache.t7')
+                    personDir=os.getcwd()
+                    with open (phash+'.jpg', 'wb') as handle:
+                        #response = requests.get(image, stream=True)
+                        #if not response.ok:
+                        #    print response
+                        #for block in response.iter_content(1024):
+                        #    if not block:
+                        #        break
+                        #    handle.write(block)
+                        handle.write(imgdata)
+                    os.chdir(fileDir)
+                    with open(imagesDir+'/images.pkl', 'w') as f:
                         pickle.dump(self.images, f)
-                    
-                    
-                    
-
+                    os.chdir(personDir)
 
 
                 else:
+                    ####Prediction of Class using offline model with distance approach####
+                    dist_distance={}
+                    
+                    for key in self.centroids_dist.keys():
+                        dist_distance[key]=(np.linalg.norm(rep-list(self.centroids_dist[key])))
+                    print self.centroids_dist.keys()
+
+                    prediction_dist=self.clf_dist.predict_proba(rep).ravel()
+                    #print prediction
+                    maxI = np.argmax(prediction_dist)
+                    person_dist = self.le_dist.inverse_transform(maxI)
+                    confidence = prediction_dist[maxI]
+                    distance=dist_distance[person_dist]
+                    person_dist_min=min(dist_distance, key=dist_distance.get)
+                    print person_dist
+
+                    print dist_distance
+                    if dist_distance[person_dist]>0.80:
+                        person_dist="unknown"
+                    
+                    ################################################################### 
+                    dist_unknown={}
+                    for key in self.centroids_unknown.keys():
+                        dist_unknown[key]=(np.linalg.norm(rep-list(self.centroids_unknown[key])))
+                    print self.centroids_unknown.keys()
+                    prediction_unknown=self.clf_unknown.predict_proba(rep).ravel()
+                    maxI = np.argmax(prediction_unknown)
+                    person_unknown = self.le_dist.inverse_transform(maxI)
+                    confidence = prediction_unknown[maxI]
+                    distance=dist_unknown[person_unknown]
+                    #person_dist=min(dist, key=dist.get)
+                    print dist_unknown
+                    if dist_unknown[person_unknown]>0.9:
+                        person_unknown="unknown"
+                    
+
+
+
+
+#####################################################################################################################################
                     if len(self.people) == 0:
                         identity = -1
                     elif len(self.people) == 1:
                         identity = 0
-                    
                     elif self.svm:
-                        print self.svm.predict_proba(rep)
-                        distances=[]
-                        for key in self.centroids.keys():
-                            id_rep=self.centroids[key]
-
-                            dist=np.linalg.norm(id_rep-rep)
-                            
-                            distances.append(dist)
-
                         identity = self.svm.predict(rep)[0]
+                        print "predicted",identity
 
-                        print "predicted",identity,distances
                     else:
                         print("hhh")
                         identity = -1
@@ -543,12 +634,16 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 if identity == -1:
                     if len(self.people) == 1:
                         name = self.people[0]
+
                     else:
                         name = "Unknown"
                 else:
                     name = self.people[identity]
-                    print name 
-                cv2.putText(annotatedFrame, name, (bb.left(), bb.top() - 10),
+                if self.classifier=="Distance":
+                    person_predicted=person_dist
+                else:
+                    person_predicted=person_unknown
+                cv2.putText(annotatedFrame, person_predicted, (bb.left(), bb.top() - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75,
                             color=(152, 255, 204), thickness=2)
 
@@ -558,7 +653,6 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 "identities": identities
             }
             self.sendMessage(json.dumps(msg))
-            print identities
 
             plt.figure()
             plt.imshow(annotatedFrame)
@@ -576,9 +670,6 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             }
             plt.close()
             self.sendMessage(json.dumps(msg))
-
-        
-
 
 
 def main(reactor):

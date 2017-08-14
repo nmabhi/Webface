@@ -35,7 +35,7 @@ np.set_printoptions(precision=2)
 import pandas as pd
 
 import openface
-
+import itertools
 from sklearn.pipeline import Pipeline
 from sklearn.lda import LDA
 from sklearn.preprocessing import LabelEncoder
@@ -44,12 +44,59 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.mixture import GMM
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import GaussianNB
+from sklearn.cross_validation import KFold
+from sklearn.cross_validation import cross_val_score
+from sklearn.cross_validation  import train_test_split
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 
 fileDir = os.path.dirname(os.path.realpath(__file__))
 #modelDir = os.path.join(fileDir, '..', 'models')
 modelDir = os.path.join(fileDir, 'models')
 dlibModelDir = os.path.join(modelDir, 'dlib')
 openfaceModelDir = os.path.join(modelDir, 'openface')
+
+
+def evaluate_cross_validation(clf, X, y, K):
+    cv = KFold(len(y), K, shuffle=True, random_state=33)
+    scores = cross_val_score(clf, X, y, cv=cv)
+    print(scores)
+    print("Mean score: {0:.3f} (+/-{1:.3f})".format(scores.mean(), scores.std()))
+
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, cm[i, j],
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
 
 
 def getRep(imgPath, multiple=False):
@@ -165,6 +212,18 @@ def train(args):
                         ('clf', clf_final)])
 
     clf.fit(embeddings, labelsNum)
+    evaluate_cross_validation(clf,embeddings,labelsNum,3)
+    X_train, X_test, y_train, y_test = train_test_split(embeddings,labelsNum , random_state=0)
+    y_pred = clf.fit(X_train, y_train).predict(X_test)
+    cnf_matrix = confusion_matrix(y_test, y_pred)
+    np.set_printoptions(precision=2)
+    #plt.figure()
+    #plot_confusion_matrix(cnf_matrix, classes=labelsNum,
+    #                  title='Confusion matrix, without normalization')
+    #plt.show()
+
+
+
     embeddings=pd.DataFrame(embeddings)
     centroids={}
     embeddings['labels']=labels

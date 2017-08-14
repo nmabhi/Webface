@@ -32,11 +32,11 @@ limitations under the License.
                 <ul class='tabs'>
                     <li class='tab-link' data-tab='tab-preview'
                         id='tab-preview-button'>
-                        Preview
+                        
                     </li>
                     <li class='tab-link current' data-tab='tab-annotated'
                         id='tab-annotated-button'>
-                        Annotated
+                        
                     </li>
                 </ul>
                 <div id='tab-preview' class='tab-content'>
@@ -48,19 +48,15 @@ limitations under the License.
                 </div>
             </div>
             <div class="content">
-                <h2>People in Video</h2>
+              <!--   <h2>People in Video</h2>
                 <div id="peopleInVideo"></div>
 
                 <h2>Servers: <span id="serverStatus"></span></h2>
-                <!-- <div id="serverStatus"></div> -->
+                
                 <div class="btn-group" role="group" id="serverBtn">
                     <button type="button" class="btn btn-default active">Local</button>
-                    <!--
-                    <button type="button" class="btn btn-default">CMU</button>
-                    <button type="button" class="btn btn-default">AWS East</button>
-                    <button type="button" class="btn btn-default">AWS West</button>
-                    -->
-                </div>
+                   
+                </div> -->
 
                 <!--
                 <h3>Null Server RTTs</h3>
@@ -76,11 +72,6 @@ limitations under the License.
                     </li>
                 </ul>
                 -->
-
-                <h2>Training
-                    <input type="checkbox" checked data-toggle="toggle"
-                           id="trainingChk">
-                </h2>
                 <div class="input-group addPersonDiv">
                     <input type="text" class="form-control" id="addPersonTxt">
                     <span class="input-group-btn">
@@ -90,6 +81,23 @@ limitations under the License.
                         </button>
                     </span>
                 </div>
+
+                <h2>Training
+                    <input type="checkbox" checked data-toggle="toggle"
+                           id="trainingChk">
+                </h2>
+                <br>
+                <p>Model Selection</p>
+                <div class="btn-group">
+                <button type="button" id="distance-approach" class="btn btn-default active" >Distance Approach</button>
+                <button type="button" id="unknown-class" class="btn btn-default">Unknown Class</button>
+                
+                </div>
+                </br>
+
+                <br>
+                <button id="retrain-button" class="btn btn-primary">Re-Train</button>
+                <br/>
                 <br/>
                 <div>
                     <button class="btn btn-default" type="button"
@@ -98,7 +106,9 @@ limitations under the License.
                     </button>
                 </div>
                 <br/>
-                <div class="dropdown" id="defaultPersonDropdown"></div>
+                
+                
+                <!-- <div class="dropdown" id="defaultPersonDropdown"></div> -->
                 <script id="defaultPersonTmpl" type="text/x-handlebars-template">
                     <button class="btn btn-default dropdown-toggle"
                             type="button" id="defaultPersonDropdownBtn"
@@ -233,6 +243,32 @@ limitations under the License.
      $("#addPersonTxt").pressEnter(addPersonCallback);
      $("#trainingChk").change(trainingChkCallback);
      $("#viewTSNEBtn").click(viewTSNECallback);
+     $("#distance-approach").click(function(){
+        distanceCallback();
+        if($('#distance-approach').hasClass("active")){
+            // $('#distance-approach').removeClass("active"); 
+        }
+        else{
+            $('#distance-approach').addClass("active");
+            $('#unknown-class').removeClass("active")
+        }
+        
+     });
+     $("#unknown-class").click(unknownCallback, function(){
+        unknownCallback();
+        if($('#unknown-class').hasClass("active")){
+            // $('#distance-approach').removeClass("active"); 
+        }
+        else{
+            $('#unknown-class').addClass("active");
+            $('#distance-approach').removeClass("active");
+        }
+        
+     });
+     $("#retrain-button").click(function(){
+        retrainCallback();  
+    });
+     
 
      redrawPeople();
      // createSocket("wss://facerec.cmusatyalab.org:9000", "CMU");

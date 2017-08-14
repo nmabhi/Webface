@@ -1,0 +1,49 @@
+Exp:1
+Training data for classes - 20
+Training data for unknown -25
+Results : Priyamvada --- Sumeetha 0.67 --- Unknown
+		  Rishab --- Anirudh  0.27 --- Unknown
+		  Abhishek --- Unknown 0.65 --- Unknown
+		  Prabjhot --- Unknown 0.45 --- Unknown
+		  Aditya --- Unknown 0.5 --- Unknown
+		  Jay Patel --- Jay Patel 0.36
+		  Bhat Sir  --- Bhat Sir 0.4
+Classification Model: Linear SVM
+Observations: 1.Generalisation of Unknown dataset
+              
+
+
+Exp:2
+Training data for classes - 20
+Training data for unknown -50
+Results : Priyamvada --- Sumeetha  0.72--- Unknown
+		  Rishab --- Anirudh  0.27 --- Unknown
+		  Abhishek --- Unknown 0.67 --- Unknown
+		  Prabjhot --- Unknown 0.40 --- Unknown
+		  Aditya --- Unknown 0.51 --- Unknown
+		  Pavan --- Unknown 0.5 --- Unknown
+		  Jay Patel --- Jay Patel 0.367
+		  Bhat Sir  --- Bhat Sir 0.41
+		  Varun --- Shriman 0.7
+		  Anirudh --- Shriman 0.6
+Classification Model: Linear SVM
+Number of misclassifications: 4
+
+Exp:3 
+Training data for classes - 20
+Training data for unknown -50
+Results : Priyamvada --- Sumeetha  0.72--- Unknown
+		  Rishab --- Unknown  0.33 --- Unknown
+		  Abhishek --- Unknown 0.67 --- Unknown
+		  Prabjhot --- Unknown 0.40 --- Unknown
+		  Aditya --- Unknown 0.51 --- Unknown
+		  Pavan --- Unknown 0.5 --- Unknown
+		  Jay Patel --- Jay Patel 0.367
+		  Bhat Sir  --- Bhat Sir 0.41
+		  Varun --- Shriman 0.7
+		  Anirudh --- Unknown --- 0.35
+Classification Model: Radial SVM
+Observations: 1.Improved performance over Linear SVM 
+Number of misclassifications : 2
+
+

@@ -3,7 +3,7 @@ import time
 for i in range(10):
 	cam=cv2.VideoCapture(0)
 	s,im=cam.read()
-	cv2.imwrite("Test2"+str(i)+".jpg",im)
+	cv2.imwrite("Test_Aditya"+str(i)+".jpg",im)
 	cam.release()
 	time.sleep(1)
 
