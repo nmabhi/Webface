@@ -61,6 +61,7 @@ function sendFrameLoop() {
         var canvas = document.createElement('canvas');
         canvas.width = vid.width;
         canvas.height = vid.height;
+
         var cc = canvas.getContext('2d');
         cc.drawImage(vid, 0, 0, vid.width, vid.height);
         var apx = cc.getImageData(0, 0, vid.width, vid.height);
@@ -75,7 +76,7 @@ function sendFrameLoop() {
         socket.send(JSON.stringify(msg));
         tok--;
     }
-    setTimeout(function() {requestAnimFrame(sendFrameLoop)}, 250);
+    setTimeout(function() {requestAnimFrame(sendFrameLoop)}, 750);
 }
 
 
@@ -118,6 +119,43 @@ function getPeopleInfoHtml() {
 //     }
 //     return h;
 // }
+
+    var rectCanvas=document.getElementById('face-canvas');
+    var ctx = rectCanvas.getContext("2d");
+    var ctxTop = 0;
+    var ctxLeft = 0;
+
+    function clearRectOnCanvas(){
+        console.log("Entered clear rect");
+        ctx.clearRect( 0,0, rectCanvas.width, rectCanvas.height);
+        ctx.beginPath();
+    }
+
+    function drawRect(content) {   
+
+        for(var i=0; i<content.length; i++)
+        {
+            console.log("Drawing Rect no.",i );
+            var top = content[i].top;
+            var right = content[i].right;
+            var bottom = content[i].bottom;
+            var left = content[i].left;
+            var identity = content[i].identity;
+            ctx.strokeStyle = "red";
+            ctx.rect(left+5,top+5,right-left,bottom-top);
+            ctx.stroke();
+            ctx.font = "20px Sans-serif";
+            ctx.fillStyle="#fff";
+            ctx.fillText(identity,left+5,top+5);
+
+            //document.body.appendChild(ctx);
+        }
+        
+    }
+
+
+
+
 
 
 function redrawPeople() {
@@ -244,9 +282,19 @@ function createSocket(address, name) {
             h += "</ul>"
             $("#peopleInVideo").html(h);
         } else if (j.type == "ANNOTATED") {
-            $("#detectedFaces").html(
-                "<img src='" + j['content'] + "' width='430px'></img>"
-            )
+            console.log("Printing content here: ", j['content']);
+            if (j['content']){
+                clearRectOnCanvas();
+                drawRect(j['content']);
+            }
+            else{
+                clearRectOnCanvas();
+            }
+            //drawRect(j['content']);
+            // $("#detectedFaces").html(
+            //     "<img src='" + j['content'] + "' width='430px'></img>"
+            // )
+
         } else if (j.type == "TSNE_DATA") {
             BootstrapDialog.show({
                 message: "<img src='" + j['content'] + "' width='100%'></img>"

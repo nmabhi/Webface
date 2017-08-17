@@ -62,6 +62,7 @@ def evaluate_cross_validation(clf, X, y, K):
     scores = cross_val_score(clf, X, y, cv=cv)
     print(scores)
     print("Mean score: {0:.3f} (+/-{1:.3f})".format(scores.mean(), scores.std()))
+    return scores.mean()
 
 
 def plot_confusion_matrix(cm, classes,
@@ -212,7 +213,7 @@ def train(args):
                         ('clf', clf_final)])
 
     clf.fit(embeddings, labelsNum)
-    evaluate_cross_validation(clf,embeddings,labelsNum,3)
+    accuracy=evaluate_cross_validation(clf,embeddings,labelsNum,3)
     X_train, X_test, y_train, y_test = train_test_split(embeddings,labelsNum , random_state=0)
     y_pred = clf.fit(X_train, y_train).predict(X_test)
     cnf_matrix = confusion_matrix(y_test, y_pred)

@@ -515,6 +515,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 
 
         identities = []
+
         if not self.training:
 
             bbs = align.getAllFaceBoundingBoxes(rgbFrame)
@@ -523,8 +524,10 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
  
              bb = align.getLargestFaceBoundingBox(rgbFrame)
              bbs = [bb] if bb is not None else []
+        content=[]
         for bb in bbs:
             # print(len(bbs))
+            faces ={}
             landmarks = align.findLandmarks(rgbFrame, bb)
             alignedFace = align.align(args.imgDim, rgbFrame, bb,
                                       landmarks=landmarks,
@@ -586,8 +589,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                     person_dist_min=min(dist_distance, key=dist_distance.get)
                     print person_dist
 
-                    print dist_distance
-                    if dist_distance[person_dist]>0.80:
+                    #print dist_distance
+                    if dist_distance[person_dist]>0.70:
                         person_dist="unknown"
                     
                     ################################################################### 
@@ -602,7 +605,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                     distance=dist_unknown[person_unknown]
                     #person_dist=min(dist, key=dist.get)
                     print dist_unknown
-                    if dist_unknown[person_unknown]>0.9:
+                    if dist_unknown[person_unknown]>0.8:
                         person_unknown="unknown"
                     
 
@@ -648,6 +651,14 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 cv2.putText(annotatedFrame, person_predicted, (bb.left(), bb.top() - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75,
                             color=(152, 255, 204), thickness=2)
+                faces['identity']=person_predicted
+                faces['left']=bb.left()
+                faces['right']=bb.right()
+                faces['top']=bb.top()
+                faces['bottom']=bb.bottom()
+                content.append(faces)
+
+
 
         if not self.training:
             msg = {
@@ -664,14 +675,22 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             imgdata = StringIO.StringIO()
             plt.savefig(imgdata, format='png')
             imgdata.seek(0)
-            content = 'data:image/png;base64,' + \
-                urllib.quote(base64.b64encode(imgdata.buf))
-            msg = {
-                "type": "ANNOTATED",
-                "content": content
-            }
-            plt.close()
+            #content = 'data:image/png;base64,' + \
+            #    urllib.quote(base64.b64encode(imgdata.buf))
+            #msg = {
+            #    "type": "ANNOTATED",
+            #    "content": content
+            #}
+            #content={"identity":person_predicted,"bottom":bb.bottom(),"top":bb.top(),"left":bb.left(),"right":bb.right()}
+            msg={
+                "type":"ANNOTATED",
+                "content":content
+                }
+            print "printing content",content
             self.sendMessage(json.dumps(msg))
+            plt.close()
+
+            #self.sendMessage(json.dumps(msg))
 
 
 def main(reactor):
