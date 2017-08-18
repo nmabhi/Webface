@@ -18,7 +18,7 @@ import os
 import sys
 fileDir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(fileDir, "..", ".."))
-
+import copy
 import txaio
 txaio.use_twisted()
 
@@ -244,8 +244,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             self.sendMessage('{"type": "PROCESSED"}')
         elif msg['type'] == "TRAINING":
             self.training = msg['val']
-            if not self.training:
-                self.trainSVM()
+            #if not self.training:
+            #    self.trainSVM()
         elif msg['type'] == "ADD_PERSON":
             if msg['val'].encode('ascii','ignore') not in self.people:
 
@@ -352,7 +352,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         if d is None:
             return
         else:
-            (X, y) = (d,d['labels'])
+            print d.columns
+            (X, y) = (copy.copy(d),copy.copy(d['labels']))
             X.drop('labels',axis=1, inplace=True)
 
         X_pca = PCA(n_components=50).fit_transform(X, X)
@@ -436,9 +437,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         except Exception as e:
             return None
 
-        X=self.embeddings_dist
-        y=self.embeddings_dist['labels']
-        X=X.drop('labels',axis=1, inplace=True)
+        
         
 
 
@@ -609,8 +608,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                     distance=dist_unknown[person_unknown]
                     #person_dist=min(dist, key=dist.get)
                     print dist_unknown
-                    if dist_unknown[person_unknown]>0.8:
-                        person_unknown="unknown"
+                    #if dist_unknown[person_unknown]>0.8:
+                    #    person_unknown="unknown"
                     
 
 
@@ -640,14 +639,15 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 for p in openface.AlignDlib.OUTER_EYES_AND_NOSE:
                     cv2.circle(annotatedFrame, center=landmarks[p], radius=3,
                                color=(102, 204, 255), thickness=-1)
-                if identity == -1:
-                    if len(self.people) == 1:
-                        name = self.people[0]
+                #if identity == -1:
+                #    if len(self.people) == 1:
+                #        name = self.people[0]
 
-                    else:
-                        name = "Unknown"
-                else:
-                    name = self.people[identity]
+                #    else:
+                #        name = "Unknown"
+                #else:
+
+                #    name = self.people[identity]
                 if self.classifier=="Distance":
                     person_predicted=person_dist
                 else:

@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+var trainSwitchView = document.getElementById('training-switch');
+
 navigator.getUserMedia = navigator.getUserMedia ||
     navigator.webkitGetUserMedia ||
     (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) ?
@@ -290,10 +293,6 @@ function createSocket(address, name) {
             else{
                 clearRectOnCanvas();
             }
-            //drawRect(j['content']);
-            // $("#detectedFaces").html(
-            //     "<img src='" + j['content'] + "' width='430px'></img>"
-            // )
 
         } else if (j.type == "TSNE_DATA") {
             BootstrapDialog.show({
@@ -332,6 +331,7 @@ function umSuccess(stream) {
 }
 
 function addPersonCallback(el) {
+    trainSwitchView.style.display = 'block';
     defaultPerson = people.length;
     var newPerson = $("#addPersonTxt").val();
     if (newPerson == "") return;

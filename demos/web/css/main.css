@@ -37,29 +37,15 @@ img {
 
 .container .header {
     text-align: center;
-    top: 0;
-    bottom: 330px;
-    position: absolute;
-    right: 0;
-    left: 0;
-    margin-left: auto;
-    margin-right: auto;
-    margin-bottom: 10px;
-    width: 80%;
-    height: 310px;
-    /* overflow-y: scroll; */
+    position: relative;
+    width: 50%;
+    margin-left: 50%;
 }
 
 .container .content {
-    top: 350px;
-    bottom: 0;
     position: absolute;
-    right: 0;
-    left: 0;
-    margin: auto;
-    width: 80%;
-    height: auto;
-    overflow-y: scroll;
+    width: 50%;
+    overflow-y:auto;
 }
 
 a.remove {
@@ -92,4 +78,8 @@ ul.tabs li.current{
 
 .tab-content.current{
     display: inherit;
+}
+
+#training-switch{
+    display: none;
 }

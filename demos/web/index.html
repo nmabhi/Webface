@@ -28,168 +28,139 @@ limitations under the License.
         <link href="css/main.css" rel="stylesheet">
     </head>
     <body>
-        <div class="container">
-            <div class="header">
-                <ul class='tabs'>
-                    <li class='tab-link' data-tab='tab-preview'
-                        id='tab-preview-button'>
-                        
-                    </li>
-                    <li class='tab-link current' data-tab='tab-annotated'
-                        id='tab-annotated-button'>
-                        
-                    </li>
-                </ul>
-                <div id='tab-preview' class='tab-content'>
-                    <canvas id="face-canvas" width="400" height="300" style="position: absolute; z-index:1000;"></canvas>
-                    <video id="videoel" width="400" height="300"
-                           preload="auto" loop></video>
-                </div>
-                <div id='tab-annotated' class='tab-content current'>
-                    <div id="detectedFaces"></div>
+        
+        <div class="container" style="height:80%; min-height:600px;max-height: 700px; overflow-y:auto; margin:100px auto; border: 1px solid white;"> 
+            <div class="col-md-6 pull-right">
+                <br>
+                <div style="margin-top: 50px;">
+                <canvas id="face-canvas" width="400" height="300" style="position: absolute; z-index:1000;"></canvas>
+                <video id="videoel" width="400" height="300" preload="auto" loop>
+                </video>
                 </div>
             </div>
-            <div class="content">
-              <!--   <h2>People in Video</h2>
-                <div id="peopleInVideo"></div>
-
-                <h2>Servers: <span id="serverStatus"></span></h2>
-                
-                <div class="btn-group" role="group" id="serverBtn">
-                    <button type="button" class="btn btn-default active">Local</button>
-                   
-                </div> -->
-
-                <!--
-                <h3>Null Server RTTs</h3>
-                <ul>
-                    <li>
-                        <b>CMU:</b> <span id="rtt-CMU">Not yet used.</span>
-                    </li>
-                    <li>
-                        <b>AWS East:</b> <span id="rtt-AWS-East">Not yet used.</span>
-                    </li>
-                    <li>
-                        <b>AWS West:</b> <span id="rtt-AWS-West">Not yet used.</span>
-                    </li>
-                </ul>
-                -->
-                <div class="input-group addPersonDiv">
-                    <input type="text" class="form-control" id="addPersonTxt">
-                    <span class="input-group-btn">
+            
+            <div class="col-md-6 pull-left">
+                <br><br>
+                <div class="training-section panel panel-default">
+                    <div class="panel-heading"> Training </div>
+                    <div class="panel-body">
+                        <div class="input-group addPersonDiv">
+                            <div class="form-group">
+                              <label class="control-label">Enter your name</label>
+                              <div class="input-group">
+                                <input type="text" class="form-control" id="addPersonTxt">
+                                <span class="input-group-btn">
+                                  <button class="btn btn-default" type="button" id="addPersonBtn">Add Person</button>
+                                </span>
+                              </div>
+                            </div>
+                        </div>
+                        <div id="training-switch">
+                            <h2>Training
+                                <input type="checkbox" checked data-toggle="toggle"
+                                       id="trainingChk">
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <div class="model-section">
+                    <p>Model Selection</p>
+                    <div class="btn-group">
+                        <button type="button" id="distance-approach" class="btn btn-default active" >Distance Approach</button>
+                        <button type="button" id="unknown-class" class="btn btn-default">Unknown Class</button>
+                    </div>
+                    <br>
+                    <br>
+                    <button id="retrain-button" class="btn btn-primary">Re-Train</button>
+                    <br>
+                    <br>
+                    <div>
                         <button class="btn btn-default" type="button"
-                                id="addPersonBtn">
-                            Add Person
+                                id="viewTSNEBtn">
+                            Visualize with TSNE
                         </button>
-                    </span>
-                </div>
-
-                <h2>Training
-                    <input type="checkbox" checked data-toggle="toggle"
-                           id="trainingChk">
-                </h2>
-                <br>
-                <p>Model Selection</p>
-                <div class="btn-group">
-                <button type="button" id="distance-approach" class="btn btn-default active" >Distance Approach</button>
-                <button type="button" id="unknown-class" class="btn btn-default">Unknown Class</button>
-                
-                </div>
-                </br>
-
-                <br>
-                <button id="retrain-button" class="btn btn-primary">Re-Train</button>
-                <br/>
-                <br/>
-                <div>
-                    <button class="btn btn-default" type="button"
-                            id="viewTSNEBtn">
-                        Visualize with TSNE
-                    </button>
-                </div>
-                <br/>
-                
-                
-                <!-- <div class="dropdown" id="defaultPersonDropdown"></div> -->
-                <script id="defaultPersonTmpl" type="text/x-handlebars-template">
-                    <button class="btn btn-default dropdown-toggle"
-                            type="button" id="defaultPersonDropdownBtn"
-                            data-toggle="dropdown" aria-haspopup="true"
-                            aria-expanded="true">
-                        Default Person
-                        <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu"
-                        aria-labelledby="defaultPersonDropdown"
-                        id="defaultPersonDropdownMenu">
-                        <li><a href="javascript:defaultPerson=-1">Unknown</a></li>
-                        {{#each people}}
-                        <li>
-                            <a href="javascript:defaultPerson={{@index}}">
-                                {{this}}
-                            </a>
-                        </li>
-                        {{/each}}
-                    </ul>
-                </script>
-
-                <br/>
-
-                <ul id="oldPeopleInfo"></ul>
-
-                <ul id="peopleInfo"></ul>
-
-                <br/>
-
-                <table class="table table-striped table-hover table-condensed"
-                       id="peopleTable">
-                </table>
-                <script id="peopleTableTmpl" type="text/x-handlebars-template">
-                    <thead><tr>
-                        <th></th>
-                        <th>Unknown</th>
-                        {{#each people}}
-                        <th>{{this}}</th>
-                        {{/each}}
-                    </tr></thead>
-
-                    <tbody>
-                        {{#each images}}
-                        <tr id="ppl_row_{{this.hash}}">
-                            <td valign='middle'>
-                                <a href="javascript:removeImage('{{this.hash}}')"
-                                   class='remove'>
-                                    ×
+                    </div>
+                    <br>                    
+                    <script id="defaultPersonTmpl" type="text/x-handlebars-template">
+                        <button class="btn btn-default dropdown-toggle"
+                                type="button" id="defaultPersonDropdownBtn"
+                                data-toggle="dropdown" aria-haspopup="true"
+                                aria-expanded="true">
+                            Default Person
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu"
+                            aria-labelledby="defaultPersonDropdown"
+                            id="defaultPersonDropdownMenu">
+                            <li><a href="javascript:defaultPerson=-1">Unknown</a></li>
+                            {{#each people}}
+                            <li>
+                                <a href="javascript:defaultPerson={{@index}}">
+                                    {{this}}
                                 </a>
-                                </font>
-                                <img src="{{this.image}}"/>
-                            </td>
-                            <td>
-                                <input type='radio'
-                                       name='ppl_radio_{{this.hash}}'
-                                       value="-1"
-                                       {{#ifEq identity -1}}
-                                       checked
-                                       {{/ifEq}}
-                                       onClick="updateIdentity('{{this.hash}}', -1)"
-                                       >
-                            </td>
-                            {{#each ../people}}
-                            <td>
-                                <input type='radio'
-                                       name='ppl_radio_{{../this.hash}}'
-                                       value="{{@index}}"
-                                       {{#ifEq ../identity @index}}
-                                       checked
-                                       {{/ifEq}}
-                                       onClick="updateIdentity('{{../this.hash}}', {{@index}})"
-                                       >
-                            </td>
+                            </li>
                             {{/each}}
-                        </tr>
-                        {{/each}}
-                    </tbody>
-                </script>
+                        </ul>
+                    </script>
+
+                    <br>
+
+                    <ul id="oldPeopleInfo"></ul>
+
+                    <ul id="peopleInfo"></ul>
+
+                    <br>
+
+                    <table class="table table-striped table-hover table-condensed"
+                           id="peopleTable">
+                    </table>
+                    <script id="peopleTableTmpl" type="text/x-handlebars-template">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Unknown</th>
+                                {{#each people}}
+                                <th>{{this}}</th>
+                                {{/each}}
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {{#each images}}
+                            <tr id="ppl_row_{{this.hash}}">
+                                <td valign='middle'>
+                                    <a href="javascript:removeImage('{{this.hash}}')"
+                                       class='remove'> ×   </a>
+                                    <img src="{{this.image}}"/>
+                                </td>
+                                <td>
+                                    <input type='radio'
+                                           name='ppl_radio_{{this.hash}}'
+                                           value="-1"
+                                           {{#ifEq identity -1}}
+                                           checked
+                                           {{/ifEq}}
+                                           onClick="updateIdentity('{{this.hash}}', -1)"
+                                           >
+                                </td>
+                                {{#each ../people}}
+                                <td>
+                                    <input type='radio'
+                                           name='ppl_radio_{{../this.hash}}'
+                                           value="{{@index}}"
+                                           {{#ifEq ../identity @index}}
+                                           checked
+                                           {{/ifEq}}
+                                           onClick="updateIdentity('{{../this.hash}}', {{@index}})"
+                                           >
+                                </td>
+                                {{/each}}
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </script>
+                </div>
             </div>
         </div>
     </body>
