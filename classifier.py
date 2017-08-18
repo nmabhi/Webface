@@ -49,6 +49,7 @@ from sklearn.cross_validation import cross_val_score
 from sklearn.cross_validation  import train_test_split
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 fileDir = os.path.dirname(os.path.realpath(__file__))
 #modelDir = os.path.join(fileDir, '..', 'models')
@@ -214,6 +215,7 @@ def train(args):
 
     clf.fit(embeddings, labelsNum)
     accuracy=evaluate_cross_validation(clf,embeddings,labelsNum,3)
+    timestamp=datetime.now()
     X_train, X_test, y_train, y_test = train_test_split(embeddings,labelsNum , random_state=0)
     y_pred = clf.fit(X_train, y_train).predict(X_test)
     cnf_matrix = confusion_matrix(y_test, y_pred)
@@ -246,6 +248,12 @@ def train(args):
     print("Saving classifier to '{}'".format(fName))
     with open(fName, 'w') as f:
         pickle.dump((le, clf), f)
+    print ("Saving accuracy of classifier")
+    
+    fname=("{}/classifier"+"-"+str(accuracy)+"-"+str(timestamp)+".pkl").format(args.workDir)
+    with open(fname, 'w') as f:
+        pickle.dump((le, clf), f)
+
 
 
 def infer(args, multiple=False):

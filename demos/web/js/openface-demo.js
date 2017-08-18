@@ -407,6 +407,7 @@ function retrainCallback(){
             'type':'RE-TRAIN',
             //'val':retrain 
         };
+    clearRectOnCanvas();
         socket.send(JSON.stringify(msg));
     }
 }
