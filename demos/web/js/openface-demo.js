@@ -17,6 +17,11 @@ limitations under the License.
 
 var trainSwitchView = document.getElementById('training-switch');
 
+if($("#trainingChk").bootstrapToggle === 'on'){
+    $('#retrain-button').prop("disabled",true);
+}
+
+
 navigator.getUserMedia = navigator.getUserMedia ||
     navigator.webkitGetUserMedia ||
     (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) ?
@@ -298,6 +303,9 @@ function createSocket(address, name) {
             BootstrapDialog.show({
                 message: "<img src='" + j['content'] + "' width='100%'></img>"
             });
+
+            $('.loader').css('display','none');
+
         } else if(j.type == "INITIALIZE") {
             // Set the initial values of people.
             // people = j.people;
@@ -308,6 +316,7 @@ function createSocket(address, name) {
         }
     }
     socket.onerror = function(e) {
+        alert("Error creating WebSocket connection to " + address);
         console.log("Error creating WebSocket connection to " + address);
         console.log(e);
     }
@@ -365,6 +374,7 @@ function trainingChkCallback() {
 }
 
 function viewTSNECallback(el) {
+    $('.loader').css('display','block');
     console.log("EnteredTsne");
     if (socket != null) {
         var msg = {

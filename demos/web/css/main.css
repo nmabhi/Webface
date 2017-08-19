@@ -1,8 +1,9 @@
 body {
-  padding: 10px;
   height: 100%;
-  font-family: Georgia, "Times New Roman", Times, serif;
+  /*font-family: Georgia, "Helvetica", Times, sans-serif;*/
   color: #555;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 #videoel {
@@ -13,12 +14,12 @@ body {
     filter : fliph; /*IE*/
 }
 
-h1, .h1, h2, .h2, h3, .h3, {
+/*h1, .h1, h2, .h2, h3, .h3, {
   margin-top: 0;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: normal;
   color: #333;
-}
+}*/
 
 @media (min-width: 1200px) {
   .container {
@@ -26,16 +27,83 @@ h1, .h1, h2, .h2, h3, .h3, {
   }
 }
 
-.addPersonDiv{
-  max-width: 330px;
-}
-
 img {
     padding: 0;
     margin: 0;
 }
+.page-heading{
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translate(-50%,0%);
+    height: 10%;
+    min-height: 70px;
+    font-size:50px;
+    font-weight: bold;
+    color:#fff;
+}
 
-.container .header {
+.container{
+    height:80%;
+    min-height:600px;
+    max-height: 600px;
+    width: 80%;
+    overflow-y:auto;
+    margin:0 auto;
+    margin-top: 60px;
+    background: rgba(0,0,0,0.2);
+}
+.video-section{
+    position: relative;
+    min-height: 480px;
+}
+.video-section canvas, video{
+    position: absolute;
+    margin:auto;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.visualize-section{
+    text-align:center;
+}
+
+#loader-background{
+    z-index: 50000;
+    background: rgba(0,0,0,0.5);
+    position: fixed;
+    height: 100%;
+    width:100%;
+
+}
+
+.loader{
+    display: none;
+}
+
+#loader{
+    border: 30px solid #00B782;
+    border-top: 30px solid #000;
+    border-radius: 50%;
+    width: 150px;
+    height: 150px;
+    animation: spin 1s linear infinite;
+    /* margin: auto; */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+/*.container .header {
     text-align: center;
     position: relative;
     width: 50%;
@@ -46,40 +114,27 @@ img {
     position: absolute;
     width: 50%;
     overflow-y:auto;
+}*/
+
+
+
+/*.nav-tabs{
+    float: left;
+    border-bottom: 0;
+    height: 90%;
+    width: 15%;
 }
 
-a.remove {
-    color: red;
-    font-size: 2em;
+.nav-tabs li{
+    width: 100%;
+    float: none;
+    margin:0;
+    font-size:30px;
 }
 
-ul.tabs{
-    margin: 0px;
-    padding: 0px;
-    list-style: none;
-}
-ul.tabs li{
-    background: none;
-    display: inline-block;
-    padding: 10px 15px;
-    cursor: pointer;
-}
-
-ul.tabs li.current{
-    background: #cceeff;
-    color: #222;
-}
-
-.tab-content{
-    display: none;
-    /* background: #ededed; */
-    /* padding: 15px; */
-}
-
-.tab-content.current{
-    display: inherit;
-}
-
-#training-switch{
-    display: none;
-}
+#faceDataTabs{
+    float: right;
+    width: 85%;
+    height: 90%;
+    overflow: auto;
+}*/
