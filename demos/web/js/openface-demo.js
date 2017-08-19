@@ -306,7 +306,13 @@ function createSocket(address, name) {
 
             $('.loader').css('display','none');
 
-        } else if(j.type == "INITIALIZE") {
+        } else if (j.type="RE-TRAINED"){
+            console.log("Retraining done");
+            $('.loader').css('display','none');
+
+
+        }
+         else if(j.type == "INITIALIZE") {
             // Set the initial values of people.
             // people = j.people;
             // images_count= j.images;
@@ -412,6 +418,7 @@ function unknownCallback(){
 
 
 function retrainCallback(){
+    $('.loader').css('display','block');
     if (socket !=null) {
         var msg = {
             'type':'RE-TRAIN',

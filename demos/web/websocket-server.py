@@ -130,6 +130,7 @@ def retrain():
     os.system('./batch-represent/main.lua -outDir Feature_gui/ -data Aligned_data/')
     os.system('python classifier.py train Feature_gui/ --classifier RadialSvm')
     os.remove(alignDir+'/Aligned_data_unknown'+'/cache.t7')
+    os.system('cp -r Feature_gui/classifier.pkl Feature_dir/')
     os.system('cp -r  Unknown/ Train_Image/')
     os.system('python align-dlib.py Train_Image/ align outerEyesAndNose Aligned_data_unknown/ --size 96')
     os.system('./batch-represent/main.lua -outDir Feature_unknown/ -data Aligned_data_unknown/')
@@ -394,7 +395,11 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             os.remove(alignDir+'/Aligned_data'+'/cache.t7')
         os.system('./batch-represent/main.lua -outDir Feature_gui/ -data Aligned_data/')
         os.system('python classifier.py train Feature_gui/ --classifier RadialSvm')
-        
+        os.system('cp -r Feature_gui/classifier.pkl Feature_dir/')
+        os.system('cp -r Feature_gui/centroids_csv.csv Feature_dir/')
+
+
+
         os.system('cp -r  Unknown/ Train_Image/')
         os.system('python align-dlib.py Train_Image/ align outerEyesAndNose Aligned_data_unknown/ --size 96')
         if os.path.isfile(alignDir+'/Aligned_data_unknown'+'/cache.t7'):
@@ -436,6 +441,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                         #return (le,clf)
         except Exception as e:
             return None
+        msg={"type":"RE-TRAINED"}
+        self.sendMessage(json.dumps(msg))
 
         
         
