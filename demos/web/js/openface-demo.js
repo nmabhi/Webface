@@ -485,8 +485,8 @@ function changeServerCallback() {
         socket.close();
         redrawPeople();
         console.log("Entered Local")
-        //createSocket("wss:" + window.location.hostname + ":9000", "Local");
-        createSocket("wss://54.188.234.61:9000", "AWS-West");
+        createSocket("wss:" + window.location.hostname + ":9000", "Local");
+        //createSocket("wss://54.188.234.61:9000", "AWS-West");
         break;
     case "CMU":
         socket.close();
