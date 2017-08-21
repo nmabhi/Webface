@@ -237,7 +237,7 @@ function createSocket(address, name) {
     socketName = name;
     socket.binaryType = "arraybuffer";
     socket.onopen = function() {
-        $("#serverStatus").html("Connected to " + name);
+        //$("#serverStatus").html("Connected to " + name);
         sentTimes = [];
         receivedTimes = [];
         tok = defaultTok;
@@ -328,7 +328,8 @@ function createSocket(address, name) {
     }
     socket.onclose = function(e) {
         if (e.target == socket) {
-            $("#serverStatus").html("Disconnected.");
+            setTimeout(createSocket, 500);
+            //$("#serverStatus").html("Disconnected.");
         }
     }
 }
@@ -346,6 +347,7 @@ function umSuccess(stream) {
 }
 
 function addPersonCallback(el) {
+    console.log(socket.readyState);
     trainSwitchView.style.display = 'block';
     defaultPerson = people.length;
     var newPerson = $("#addPersonTxt").val();
@@ -364,6 +366,7 @@ function addPersonCallback(el) {
 }
 
 function trainingChkCallback() {
+    console.log(socket.readyState);
     training = $("#trainingChk").prop('checked');
     if (training) {
         makeTabActive("tab-preview");
@@ -375,11 +378,14 @@ function trainingChkCallback() {
             'type': 'TRAINING',
             'val': training
         };
+
+    console.log("Printing msg",msg);
         socket.send(JSON.stringify(msg));
     }
 }
 
 function viewTSNECallback(el) {
+    console.log(socket.readyState);
     $('.loader').css('display','block');
     console.log("EnteredTsne");
     if (socket != null) {
@@ -392,6 +398,7 @@ function viewTSNECallback(el) {
 }
 
 function distanceCallback(){
+    console.log(socket.readyState);
     console.log("distance cllback");
     if (socket !=null) {
         console.log("not null");
@@ -405,6 +412,7 @@ function distanceCallback(){
 }
 
 function unknownCallback(){
+    console.log(socket.readyState);
     console.log("unknown callback");
     if (socket !=null) {
         console.log("not null");
@@ -418,6 +426,7 @@ function unknownCallback(){
 
 
 function retrainCallback(){
+    console.log(socket.readyState);
     $('.loader').css('display','block');
     if (socket !=null) {
         var msg = {
@@ -475,7 +484,9 @@ function changeServerCallback() {
     case "Local":
         socket.close();
         redrawPeople();
-        createSocket("wss:" + window.location.hostname + ":9000", "Local");
+        console.log("Entered Local")
+        //createSocket("wss:" + window.location.hostname + ":9000", "Local");
+        createSocket("wss://54.188.234.61:9000", "AWS-West");
         break;
     case "CMU":
         socket.close();

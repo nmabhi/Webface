@@ -279,6 +279,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             else:
                 print("Image not found.")
         elif msg['type'] == 'REQ_TSNE':
+            print "Received message TSNE"
             self.sendTSNE(msg['people'])
         elif msg['type']== 'RE-TRAIN':
             print self.classifier
