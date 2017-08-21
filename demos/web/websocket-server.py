@@ -350,7 +350,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         #    d=self.embeddings_dist
         #else:
         #    d=self.embeddings_unknown
-        d = self.embeddings_dist
+        d = pd.read_csv(featureDir+'/embeddings.csv')
         if d is None:
             return
         else:
@@ -389,27 +389,29 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
     def retrain(self):
         os.chdir(alignDir)
         
-        
-        os.system('python align-dlib.py'+' '+trainDir+' '+'align outerEyesAndNose Aligned_data/ --size 96')
-        if os.path.isfile(alignDir+'/Aligned_data'+'/cache.t7'):
+        if self.classifier=="Distance":
 
-            os.remove(alignDir+'/Aligned_data'+'/cache.t7')
-        os.system('./batch-represent/main.lua -outDir Feature_gui/ -data Aligned_data/')
-        os.system('python classifier.py train Feature_gui/ --classifier RadialSvm')
-        os.system('cp -r Feature_gui/classifier.pkl Feature_dir/')
-        os.system('cp -r Feature_gui/centroids_csv.csv Feature_dir/')
+            os.system('python align-dlib.py'+' '+trainDir+' '+'align outerEyesAndNose Aligned_data/ --size 96')
+            if os.path.isfile(alignDir+'/Aligned_data'+'/cache.t7'):
+
+                os.remove(alignDir+'/Aligned_data'+'/cache.t7')
+            os.system('./batch-represent/main.lua -outDir Feature_gui/ -data Aligned_data/')
+            os.system('python classifier.py train Feature_gui/ --classifier RadialSvm')
+            os.system('cp -r Feature_gui/classifier.pkl Feature_dir/')
+            os.system('cp -r Feature_gui/centroids_csv.csv Feature_dir/')
 
 
+        else:
 
-        os.system('cp -r  Unknown/ Train_Image/')
-        os.system('python align-dlib.py Train_Image/ align outerEyesAndNose Aligned_data_unknown/ --size 96')
-        if os.path.isfile(alignDir+'/Aligned_data_unknown'+'/cache.t7'):
+            os.system('cp -r  Unknown/ Train_Image/')
+            os.system('python align-dlib.py Train_Image/ align outerEyesAndNose Aligned_data_unknown/ --size 96')
+            if os.path.isfile(alignDir+'/Aligned_data_unknown'+'/cache.t7'):
 
-            os.remove(alignDir+'/Aligned_data_unknown'+'/cache.t7')
-        os.system('./batch-represent/main.lua -outDir Feature_unknown/ -data Aligned_data_unknown/')
-        os.system('python classifier.py train Feature_unknown/ --classifier RadialSvm')
-        os.chdir(alignDir+'/Train_Image/')
-        os.system('rm -rf Unknown/')
+                os.remove(alignDir+'/Aligned_data_unknown'+'/cache.t7')
+            os.system('./batch-represent/main.lua -outDir Feature_unknown/ -data Aligned_data_unknown/')
+            os.system('python classifier.py train Feature_unknown/ --classifier RadialSvm')
+            os.chdir(alignDir+'/Train_Image/')
+            os.system('rm -rf Unknown/')
         
 
 

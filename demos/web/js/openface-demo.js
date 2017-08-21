@@ -328,7 +328,7 @@ function createSocket(address, name) {
     }
     socket.onclose = function(e) {
         if (e.target == socket) {
-            setTimeout(createSocket, 500);
+            setTimeout(createSocket(address,name), 500);
             //$("#serverStatus").html("Disconnected.");
         }
     }
